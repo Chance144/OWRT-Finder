@@ -1,7 +1,9 @@
+import * as FileSystem from 'expo-file-system';
 import { OpenWrtDevice, TohData } from '../types/device';
 import { MOCK_TOH_DATA } from './mockData';
 
 const TOH_JSON_URL = 'https://openwrt.org/toh.json';
+const CACHE_FILE_URI = FileSystem.documentDirectory + 'toh-cache.json';
 
 // In-memory cache
 let cachedDevices: OpenWrtDevice[] | null = null;
@@ -31,16 +33,42 @@ export const fetchOpenWrtDevices = async (): Promise<OpenWrtDevice[]> => {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         const text = await response.text();
-        // Sometimes APIs return BOM or weird chars, being safe
+        
+        // Validate JSON before caching
         const json: TohData = JSON.parse(text);
+        
+        // Cache the valid response asynchronously (don't await to block UI)
+        FileSystem.writeAsStringAsync(CACHE_FILE_URI, text)
+            .then(() => console.log('Successfully cached TOH data'))
+            .catch(err => console.warn('Failed to cache TOH data:', err));
+
         const devices = processData(json);
         cachedDevices = devices;
         return devices;
-    } catch (error) {
-        console.warn('Failed to fetch OpenWrt TOH data, using mock data. Error:', error);
-        const devices = processData(MOCK_TOH_DATA);
-        cachedDevices = devices;
-        return devices;
+
+    } catch (networkError) {
+        console.warn('Network request failed, attempting to read from offline cache...', networkError);
+        
+        try {
+            // Check if cache file exists
+            const fileInfo = await FileSystem.getInfoAsync(CACHE_FILE_URI);
+            
+            if (fileInfo.exists) {
+                console.log('Reading from offline cache');
+                const cachedContent = await FileSystem.readAsStringAsync(CACHE_FILE_URI);
+                const json: TohData = JSON.parse(cachedContent);
+                const devices = processData(json);
+                cachedDevices = devices;
+                return devices;
+            } else {
+                throw new Error('No offline cache available');
+            }
+        } catch (cacheError) {
+            console.warn('Offline cache failed, using mock data. Error:', cacheError);
+            const devices = processData(MOCK_TOH_DATA);
+            cachedDevices = devices;
+            return devices;
+        }
     }
 };
 

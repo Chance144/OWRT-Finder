@@ -1,6 +1,6 @@
 {
   "name": "openwrt-toh-app",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "main": "index.js",
   "scripts": {
     "start": "expo start",
@@ -9,10 +9,13 @@
     "web": "expo start --web"
   },
   "dependencies": {
+    "@react-native-ml-kit/text-recognition": "^2.0.0",
     "@react-navigation/native": "^7.1.25",
     "@react-navigation/stack": "^7.6.12",
     "@types/react": "~19.1.10",
     "expo": "~54.0.29",
+    "expo-camera": "^17.0.10",
+    "expo-file-system": "^19.0.21",
     "expo-status-bar": "~3.0.9",
     "react": "19.1.0",
     "react-dom": "19.1.0",

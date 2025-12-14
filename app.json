@@ -2,7 +2,7 @@
   "expo": {
     "name": "OWRT Finder",
     "slug": "openwrt-toh-app",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -26,6 +26,14 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera to scan router labels."
+        }
+      ]
+    ],
     "extra": {
       "eas": {
         "projectId": "d181fe05-a11c-4744-aa8f-a96499a3bbbe"

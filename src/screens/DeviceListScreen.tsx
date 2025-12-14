@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { View, FlatList, StyleSheet } from 'react-native';
-import { Appbar, Searchbar, List, ActivityIndicator, Text } from 'react-native-paper';
+import { Appbar, Searchbar, List, ActivityIndicator, Text, FAB } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { fetchOpenWrtDevices } from '../services/api';
 import { OpenWrtDevice } from '../types/device';
@@ -64,14 +64,22 @@ export default function DeviceListScreen() {
                     <Text style={{ marginTop: 10 }}>Loading OpenWrt Database...</Text>
                 </View>
             ) : (
-                <FlatList
-                    data={filteredDevices}
-                    keyExtractor={(item, index) => item.deviceid || String(index)}
-                    renderItem={renderItem}
-                    initialNumToRender={20}
-                    maxToRenderPerBatch={50}
-                    windowSize={21}
-                />
+                <>
+                    <FlatList
+                        data={filteredDevices}
+                        keyExtractor={(item, index) => item.deviceid || String(index)}
+                        renderItem={renderItem}
+                        initialNumToRender={20}
+                        maxToRenderPerBatch={50}
+                        windowSize={21}
+                    />
+                    <FAB
+                        icon="camera"
+                        label="Scan Label"
+                        style={styles.fab}
+                        onPress={() => navigation.navigate('Scan')}
+                    />
+                </>
             )}
         </View>
     );
@@ -89,5 +97,11 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
+    },
+    fab: {
+        position: 'absolute',
+        margin: 16,
+        right: 0,
+        bottom: 0,
     },
 });

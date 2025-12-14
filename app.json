@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "openwrt-toh-app",
+    "name": "OWRT Finder",
     "slug": "openwrt-toh-app",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -20,10 +20,16 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.chance144.openwrttohapp"
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "d181fe05-a11c-4744-aa8f-a96499a3bbbe"
+      }
     }
   }
 }

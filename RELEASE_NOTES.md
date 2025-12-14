@@ -1,6 +1,6 @@
 # Release Notes
 
-## v1.1.0 - Thrift Store Hunter Update (2025-12-14)
+## v1.1.0 - Camera & Offline Update (2025-12-14)
 
 🔥 **New Feature: Camera Scan & Offline Mode!**
 

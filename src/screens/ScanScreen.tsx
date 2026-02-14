@@ -10,12 +10,12 @@ export default function ScanScreen() {
     const [permission, requestPermission] = useCameraPermissions();
     const [scanning, setScanning] = useState(false);
     const [scannedImage, setScannedImage] = useState<string | null>(null);
+    const [scanResult, setScanResult] = useState<string | null>(null);
     const cameraRef = useRef<CameraView>(null);
     const navigation = useNavigation<any>();
     const [devices, setDevices] = useState<OpenWrtDevice[]>([]);
 
     useEffect(() => {
-        // Pre-load devices for lookup
         loadDevices();
     }, []);
 
@@ -28,6 +28,12 @@ export default function ScanScreen() {
         }
     };
 
+    const resetScan = () => {
+        setScannedImage(null);
+        setScanResult(null);
+        setScanning(false);
+    };
+
     if (!permission) {
         return <View />;
     }
@@ -35,6 +41,9 @@ export default function ScanScreen() {
     if (!permission.granted) {
         return (
             <View style={styles.container}>
+                <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+                    <Text style={styles.backText}>← Back</Text>
+                </TouchableOpacity>
                 <Text style={styles.message}>We need your permission to show the camera</Text>
                 <TouchableOpacity onPress={requestPermission} style={styles.permissionButton}>
                     <Text style={styles.text}>Grant Permission</Text>
@@ -43,9 +52,20 @@ export default function ScanScreen() {
         );
     }
 
+    const fuzzySearchFccId = (fccId: string): OpenWrtDevice | undefined => {
+        const clean = fccId.replace(/[-\s]/g, '').toLowerCase();
+        // Try matching against brand+model combos and model names
+        return devices.find(d => {
+            const brandModel = (d.brand + d.model).replace(/[-\s]/g, '').toLowerCase();
+            const model = d.model.replace(/[-\s]/g, '').toLowerCase();
+            return brandModel.includes(clean) || clean.includes(model) || model.includes(clean);
+        });
+    };
+
     const takePictureAndScan = async () => {
         if (!cameraRef.current) return;
         setScanning(true);
+        setScanResult(null);
 
         try {
             const photo = await cameraRef.current.takePictureAsync({
@@ -57,26 +77,22 @@ export default function ScanScreen() {
 
             setScannedImage(photo.uri);
             const result = await TextRecognition.recognize(photo.uri);
+            setScanning(false);
             processText(result.text);
 
         } catch (error) {
             console.error('OCR Error:', error);
             Alert.alert('Scan Failed', 'Could not recognize text.');
-            setScanning(false);
-            setScannedImage(null);
+            resetScan();
         }
     };
 
     const processText = (text: string) => {
         console.log('Recognized Text:', text);
-
-        // Normalize text
         const cleanText = text.replace(/\n/g, ' ');
 
         // Regex Strategies
-        // 1. FCC ID
         const fccMatch = cleanText.match(/FCC\s*ID[:\.\-]?\s*([A-Z0-9]{3,5}-?[A-Z0-9]+)/i);
-        // 2. Model
         const modelMatch = cleanText.match(/(?:Model|M\/N|Modell|Modelo)[:\.\-]?\s*([A-Z0-9\-\/]+)/i);
 
         let foundDevice: OpenWrtDevice | undefined;
@@ -84,12 +100,22 @@ export default function ScanScreen() {
         if (fccMatch) {
             const fccId = fccMatch[1].trim();
             console.log('Found FCC ID:', fccId);
-            // Search logic could be expanded here if we had an FCC DB
-            // For now, try to fuzzy match in known models? Unlikely to work directly without a mapping.
-            // But let's tell the user what we found.
-            Alert.alert('FCC ID Found', `ID: ${fccId}\n(FCC ID lookup not yet implemented in local DB)`);
-            setScanning(false);
-            setScannedImage(null);
+
+            foundDevice = fuzzySearchFccId(fccId);
+
+            if (foundDevice) {
+                setScanResult(`FCC ID: ${fccId}\nMatch: ${foundDevice.brand} ${foundDevice.model}`);
+                Alert.alert(
+                    'Device Found via FCC ID!',
+                    `FCC ID: ${fccId}\nMatch: ${foundDevice.brand} ${foundDevice.model}\nTarget: ${foundDevice.target}`,
+                    [
+                        { text: 'View Details', onPress: () => { navigation.navigate('Details', { device: foundDevice }); resetScan(); } },
+                        { text: 'OK' }
+                    ]
+                );
+            } else {
+                setScanResult(`FCC ID: ${fccId}\nNo match found.\n\nFull OCR text:\n${text}`);
+            }
             return;
         }
 
@@ -97,37 +123,48 @@ export default function ScanScreen() {
             const model = modelMatch[1].trim();
             console.log('Found Model:', model);
 
-            // Fuzzy search in loaded devices
             foundDevice = devices.find(d =>
                 d.model.toLowerCase().includes(model.toLowerCase()) ||
                 model.toLowerCase().includes(d.model.toLowerCase())
             );
 
             if (foundDevice) {
+                setScanResult(`Model: ${model}\nMatch: ${foundDevice.brand} ${foundDevice.model}`);
                 Alert.alert(
                     'Device Found!',
                     `Match: ${foundDevice.brand} ${foundDevice.model}\nTarget: ${foundDevice.target}`,
                     [
-                        { text: 'View Details', onPress: () => navigation.navigate('Details', { device: foundDevice }) },
-                        { text: 'Scan Again', onPress: () => { setScanning(false); setScannedImage(null); } }
+                        { text: 'View Details', onPress: () => { navigation.navigate('Details', { device: foundDevice }); resetScan(); } },
+                        { text: 'OK' }
                     ]
                 );
             } else {
-                Alert.alert('Model Not Found', `Scanned Model: ${model}\nNo direct match in database.`, [
-                    { text: 'OK', onPress: () => { setScanning(false); setScannedImage(null); } }
-                ]);
+                setScanResult(`Model: ${model}\nNo match in database.\n\nFull OCR text:\n${text}`);
             }
         } else {
-            Alert.alert('No Info Found', 'Could not detect Model or FCC ID.', [
-                { text: 'Try Again', onPress: () => { setScanning(false); setScannedImage(null); } }
-            ]);
+            setScanResult(`No Model or FCC ID detected.\n\nFull OCR text:\n${text}`);
         }
     };
 
     return (
         <View style={styles.container}>
+            {/* Back button */}
+            <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+                <Text style={styles.backText}>← Back</Text>
+            </TouchableOpacity>
+
             {scannedImage && !scanning ? (
-                <Image source={{ uri: scannedImage }} style={styles.preview} />
+                <View style={styles.previewContainer}>
+                    <Image source={{ uri: scannedImage }} style={styles.preview} />
+                    {scanResult && (
+                        <View style={styles.resultOverlay}>
+                            <Text style={styles.resultText}>{scanResult}</Text>
+                        </View>
+                    )}
+                    <TouchableOpacity style={styles.scanAgainButton} onPress={resetScan}>
+                        <Text style={styles.scanAgainText}>Scan Again</Text>
+                    </TouchableOpacity>
+                </View>
             ) : (
                 <CameraView style={styles.camera} ref={cameraRef} facing="back">
                     <View style={styles.overlay}>
@@ -137,15 +174,17 @@ export default function ScanScreen() {
                 </CameraView>
             )}
 
-            <View style={styles.controls}>
-                {scanning ? (
-                    <ActivityIndicator size="large" color="#fff" />
-                ) : (
-                    <TouchableOpacity style={styles.captureButton} onPress={takePictureAndScan}>
-                        <View style={styles.captureInner} />
-                    </TouchableOpacity>
-                )}
-            </View>
+            {!scannedImage && (
+                <View style={styles.controls}>
+                    {scanning ? (
+                        <ActivityIndicator size="large" color="#fff" />
+                    ) : (
+                        <TouchableOpacity style={styles.captureButton} onPress={takePictureAndScan}>
+                            <View style={styles.captureInner} />
+                        </TouchableOpacity>
+                    )}
+                </View>
+            )}
         </View>
     );
 }
@@ -213,8 +252,54 @@ const styles = StyleSheet.create({
         borderWidth: 2,
         borderColor: 'black',
     },
+    previewContainer: {
+        flex: 1,
+    },
     preview: {
         flex: 1,
         resizeMode: 'contain',
-    }
+    },
+    resultOverlay: {
+        position: 'absolute',
+        bottom: 80,
+        left: 16,
+        right: 16,
+        backgroundColor: 'rgba(0,0,0,0.75)',
+        borderRadius: 8,
+        padding: 12,
+        maxHeight: 200,
+    },
+    resultText: {
+        color: 'white',
+        fontSize: 13,
+    },
+    scanAgainButton: {
+        position: 'absolute',
+        bottom: 30,
+        alignSelf: 'center',
+        backgroundColor: '#2196F3',
+        paddingHorizontal: 24,
+        paddingVertical: 12,
+        borderRadius: 24,
+    },
+    scanAgainText: {
+        color: 'white',
+        fontWeight: 'bold',
+        fontSize: 16,
+    },
+    backButton: {
+        position: 'absolute',
+        top: 50,
+        left: 16,
+        zIndex: 10,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 16,
+    },
+    backText: {
+        color: 'white',
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
 });

@@ -4,10 +4,6 @@
 
 This Android application provides offline access to specifications for over 2,800 devices supported by OpenWrt. It is designed to be fast, searchable, and usable without an internet connection.
 
-<p align="center">
-  <img src="website/assets/hero.png" alt="OpenWrt Hardware Viewer" width="100%">
-</p>
-
 ## ✨ Features
 
 *   **Offline Database**: All device data is cached locally. Search and view specs anywhere.
@@ -18,16 +14,16 @@ This Android application provides offline access to specifications for over 2,80
 
 ## 🚀 Installation
 
-You can download the latest APK from the [Releases](https://github.com/YOUR_USERNAME/openwrt-toh-app/releases) page.
+You can download the latest APK from the [Releases](https://github.com/Chance144/OWRT-Finder/releases) page.
 
-## 🛠 Building form Source
+## 🛠 Building from Source
 
 This project uses **Expo**. To run it locally:
 
 1.  **Clone the repository**
     ```bash
-    git clone https://github.com/YOUR_USERNAME/openwrt-toh-app.git
-    cd openwrt-toh-app
+    git clone https://github.com/Chance144/OWRT-Finder.git
+    cd OWRT-Finder
     ```
 
 2.  **Install dependencies**

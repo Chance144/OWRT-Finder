@@ -1,5 +1,27 @@
 # Release Notes
 
+## v1.2.0 - Quality of Life Update (2026-02-14)
+
+🔧 **Bug fixes, new filters, and scan screen overhaul.**
+
+### 🐛 Bug Fixes
+*   **Scan preview now works**: Fixed bug where the scanned image preview never displayed because state was cleared prematurely. The preview now stays visible with OCR results until the user taps "Scan Again".
+*   **FCC ID no longer a dead end**: FCC IDs are now fuzzy-matched against the device database. If no match is found, the raw OCR text is displayed so users can search manually.
+
+### 🆕 New Features
+*   **Pull-to-refresh**: Swipe down on the device list to force-refresh data from the OpenWrt server (clears in-memory cache).
+*   **Device count**: The number of devices (or filtered results) is now shown below the search bar.
+*   **Filter chips**: Quick-filter buttons for ≥64MB RAM, ≥128MB RAM, ≥16MB Flash, and ≥32MB Flash.
+*   **Back button on Scan screen**: Navigate back to the device list from the scanner.
+*   **Scan Again button**: After scanning, tap "Scan Again" to reset and take a new photo.
+
+### 🧹 Improvements
+*   **README cleanup**: Fixed GitHub URLs, removed broken hero image reference.
+*   **Cache management**: Added `clearCache` and `getCacheAge` exports for better cache control.
+*   Version bumped to 1.2.0.
+
+---
+
 ## v1.1.0 - Camera & Offline Update (2025-12-14)
 
 🔥 **New Feature: Camera Scan & Offline Mode!**
